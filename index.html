@@ -259,18 +259,9 @@
     let balance = 0;
     let joined = false;
     let mCount = 0;
-const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
 
-if (!tgUser) {
-    alert("Telegram user not found!");
-}
-
-const userId = tgUser.id.toString();
-
-db.ref("users/" + userId + "/balance").on("value", snapshot => {
-    balance = snapshot.val() || 0;
-    updateUI();
-});
+    
+    
     function login() {
         localStorage.setItem('loggedIn', 'true');
         checkAuth();
@@ -280,6 +271,11 @@ db.ref("users/" + userId + "/balance").on("value", snapshot => {
         if(localStorage.getItem('loggedIn')) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-ui').classList.remove('hidden');
+            db.ref("users/" + userId + "/balance").on("value", snapshot => {
+    balance = snapshot.val() || 0;
+    updateUI();
+});
+            
             startTimer();
             updateUI();
         }
@@ -323,36 +319,96 @@ db.ref("users/" + userId + "/balance").on("value", snapshot => {
     const userId = "user_001"; // ডেমো ইউজার
 
 function payVia(method) {
+
+    // STEP 1: Ask Amount
     openModal(
-        `${method} Payment`,
-        `${method} 01989118735 এই নাম্বারে টাকা পাঠিয়ে Transaction ID দিন`,
-        "Transaction ID লিখুন",
-        (tid) => {
+        "Add Money",
+        "আপনি কত টাকা Add করতে চান?",
+        "50",
+        (amountInput) => {
 
-            db.ref("depositRequests").push({
-                userId: userId,
-                method: method,
-                transactionId: tid,
-                amount: 100,
-                status: "pending",
-                time: Date.now()
-            });
+            const amount = Number(amountInput);
 
-            alert("✅ Add Money Request Admin এর কাছে চলে গেছে");
+            if (!amount || amount < 10) {
+                alert("❌ সঠিক Amount দিন (কমপক্ষে ১০ টাকা)");
+                return;
+            }
+
+            // 🔴 IMPORTANT: close first modal manually
+            closeModal();
+
+            // STEP 2: Ask Transaction ID (delay দিয়ে)
+            setTimeout(() => {
+                openModal(
+                    `${method} Payment`,
+                    `${method} 01989118735 এই নাম্বারে ${amount} টাকা পাঠিয়ে Transaction ID দিন`,
+                    "Transaction ID লিখুন",
+                    (tid) => {
+
+                        db.ref("depositRequests").push({
+                            userId: userId,
+                            method: method,
+                            amount: amount,
+                            transactionId: tid,
+                            status: "pending",
+                            time: Date.now()
+                        });
+
+                        alert("✅ Add Money Request Admin এর কাছে পাঠানো হয়েছে");
+                    }
+                );
+            }, 300);
         }
     );
 }
 
     function handleWithdraw() {
-        if(balance < 50) {
-            alert("আপনার ব্যালেন্স ৫০ টাকার কম। উইথড্র করা সম্ভব নয়।");
-            return;
-        }
-        openModal("Withdraw Money", "বিকাশ নম্বর এবং টাকার পরিমাণ লিখুন:", "017XXXXXXXX, 100TK", (info) => {
-                alert("আপনার উইথড্র রিকোয়েস্ট সফল হয়েছে!");
+
+    // STEP 1: Ask Amount
+    openModal(
+        "Withdraw",
+        "আপনি কত টাকা Withdraw করতে চান? (Minimum 50)",
+        "50",
+        (amountInput) => {
+
+            const amount = parseInt(amountInput);
+
+            if (!amount || amount < 50) {
+                alert("❌ Minimum Withdraw 50 টাকা");
+                return;
             }
-        );
-    }
+
+            if (amount > balance) {
+                alert("❌ পর্যাপ্ত ব্যালেন্স নেই");
+                return;
+            }
+
+            closeModal();
+
+            // STEP 2: Ask Number
+            setTimeout(() => {
+                openModal(
+                    "Withdraw",
+                    `Bkash নাম্বার দিন (Amount: ${amount} টাকা)`,
+                    "01XXXXXXXXX",
+                    (number) => {
+
+                        db.ref("withdrawRequests").push({
+                            userId: userId,
+                            amount: amount,
+                            method: "Bkash",
+                            number: number,
+                            status: "pending",
+                            time: Date.now()
+                        });
+
+                        alert("✅ Withdraw request Admin এর কাছে পাঠানো হয়েছে");
+                    }
+                );
+            }, 300);
+        }
+    );
+}
 
     function handleJoin() {
         if(joined) return;
