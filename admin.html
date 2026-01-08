@@ -1,0 +1,139 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  <!-- Firebase -->  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>  <style>
+    *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+    body{margin:0;background:#f3f4f6}
+    header{background:#0f172a;color:#fff;padding:15px;font-size:18px;font-weight:bold}
+    .tabs{display:flex;gap:8px;padding:10px;background:#e5e7eb}
+    .tab{flex:1;text-align:center;padding:10px;border-radius:6px;font-weight:bold;cursor:pointer;background:#cbd5f5}
+    .tab.active{background:#2563eb;color:#fff}
+    .container{padding:15px}
+    .section{display:none}
+    .section.active{display:block}
+    .box{background:#fff;border-radius:10px;padding:15px;margin-bottom:15px;box-shadow:0 4px 10px rgba(0,0,0,.08)}
+    h2{margin:0 0 10px;font-size:16px}
+    input,select{width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #d1d5db}
+    button{padding:8px;border:none;border-radius:6px;font-weight:bold;cursor:pointer}
+    .approve{background:#16a34a;color:#fff}
+    .reject{background:#dc2626;color:#fff}
+    .add{background:#2563eb;color:#fff;width:100%}
+    .card{border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px}
+    .row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px}
+    .status{font-size:12px;padding:3px 8px;border-radius:12px}
+    .pending{background:#fde68a}
+    .approved{background:#bbf7d0}
+    .rejected{background:#fecaca}
+    .upcoming{background:#fde68a}
+    .live{background:#bbf7d0}
+    .closed{background:#fecaca}
+    .actions{display:flex;gap:6px;margin-top:6px}
+  </style></head>
+<body><header>Admin Dashboard</header><div class="tabs">
+  <div class="tab active" onclick="showTab('withdraw')">Withdraw</div>
+  <div class="tab" onclick="showTab('deposit')">Deposit</div>
+  <div class="tab" onclick="showTab('matches')">Matches</div>
+</div><div class="container">  <!-- Withdraw -->  <div id="withdraw" class="section active">
+    <div class="box"><h2>Withdraw Requests</h2><div id="withdrawList"></div></div>
+  </div>  <!-- Deposit -->  <div id="deposit" class="section">
+    <div class="box"><h2>Deposit Requests</h2><div id="depositList"></div></div>
+  </div>  <!-- Matches -->  <div id="matches" class="section">
+    <div class="box">
+      <h2>Add Match</h2>
+      <input id="mTitle" placeholder="Match Title" />
+      <select id="mGame"><option>Free Fire</option><option>Blood Strike</option></select>
+      <select id="mType"><option>Solo</option><option>Duo</option><option>Squad</option></select>
+      <input id="mEntry" type="number" placeholder="Entry Fee" />
+      <input id="mPrize" type="number" placeholder="Prize" />
+      <input id="mTime" placeholder="Date & Time" />
+      <button class="add" onclick="addMatch()">Add Match</button>
+    </div>
+    <div class="box"><h2>All Matches</h2><div id="matchList"></div></div>
+  </div></div><script>
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+    projectId: "YOUR_PROJECT"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  function showTab(id){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelector(`[onclick="showTab('${id}')"]`).classList.add('active');
+  }
+
+  // Withdraw
+  db.ref('withdrawRequests').on('value', snap=>{
+    withdrawList.innerHTML='';
+    snap.forEach(c=>{
+      const d=c.val();
+      withdrawList.innerHTML+=`<div class='card'>
+        <div class='row'><b>User:</b>${d.userId}</div>
+        <div class='row'><b>Amount:</b>৳${d.amount}</div>
+        <div class='row'><span class='status ${d.status}'>${d.status}</span></div>
+        <div class='actions'>
+          <button class='approve' onclick="approveWithdraw('${c.key}','${d.userId}',${d.amount})">Approve</button>
+          <button class='reject' onclick="rejectWithdraw('${c.key}')">Reject</button>
+        </div></div>`;
+    })
+  })
+
+  function approveWithdraw(id,uid,amt){
+    db.ref('withdrawRequests/'+id).update({status:'approved'});
+    db.ref('users/'+uid+'/balance').transaction(b=>(b||0)-amt);
+  }
+  function rejectWithdraw(id){db.ref('withdrawRequests/'+id).update({status:'rejected'})}
+
+  // Deposit
+  db.ref('depositRequests').on('value', snap=>{
+    depositList.innerHTML='';
+    snap.forEach(c=>{
+      const d=c.val();
+      depositList.innerHTML+=`<div class='card'>
+        <div class='row'><b>User:</b>${d.userId}</div>
+        <div class='row'><b>Amount:</b>৳${d.amount}</div>
+        <div class='row'><span class='status ${d.status}'>${d.status}</span></div>
+        <div class='actions'>
+          <button class='approve' onclick="approveDeposit('${c.key}','${d.userId}',${d.amount})">Approve</button>
+          <button class='reject' onclick="rejectDeposit('${c.key}')">Reject</button>
+        </div></div>`;
+    })
+  })
+
+  function approveDeposit(id,uid,amt){
+    db.ref('depositRequests/'+id).update({status:'approved'});
+    db.ref('users/'+uid+'/balance').transaction(b=>(b||0)+amt);
+  }
+  function rejectDeposit(id){db.ref('depositRequests/'+id).update({status:'rejected'})}
+
+  // Matches
+  function addMatch(){
+    db.ref('matches').push({
+      title:mTitle.value,game:mGame.value,type:mType.value,
+      entryFee:mEntry.value,prize:mPrize.value,time:mTime.value,status:'upcoming'
+    });
+    mTitle.value=mEntry.value=mPrize.value=mTime.value='';
+  }
+
+  db.ref('matches').on('value', snap=>{
+    matchList.innerHTML='';
+    snap.forEach(c=>{
+      const m=c.val();
+      matchList.innerHTML+=`<div class='card'>
+        <div class='row'><b>${m.title}</b><span class='status ${m.status}'>${m.status}</span></div>
+        <div class='row'>${m.game} • ${m.type}</div>
+        <div class='row'>Entry ৳${m.entryFee} | Prize ৳${m.prize}</div>
+        <div class='row'>${m.time}</div>
+        <div class='actions'>
+          <button class='approve' onclick="db.ref('matches/${c.key}').update({status:'live'})">Live</button>
+          <button class='reject' onclick="db.ref('matches/${c.key}').update({status:'closed'})">Close</button>
+        </div></div>`;
+    })
+  })
+</script></body>
+</html>
