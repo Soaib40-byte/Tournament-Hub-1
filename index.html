@@ -259,7 +259,18 @@
     let balance = 0;
     let joined = false;
     let mCount = 0;
+const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
 
+if (!tgUser) {
+    alert("Telegram user not found!");
+}
+
+const userId = tgUser.id.toString();
+
+db.ref("users/" + userId + "/balance").on("value", snapshot => {
+    balance = snapshot.val() || 0;
+    updateUI();
+});
     function login() {
         localStorage.setItem('loggedIn', 'true');
         checkAuth();
