@@ -235,8 +235,27 @@
         </div>
     </div>
 </div>
-
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDgBrES-3lWjeFVo6vz3jfMOyCl_tgy_RQ",
+    authDomain: "tournament-hub-a936a.firebaseapp.com",
+    databaseURL: "https://tournament-hub-a936a-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "tournament-hub-a936a",
+    storageBucket: "tournament-hub-a936a.appspot.com",
+    messagingSenderId: "968072956918",
+    appId: "1:968072956918:web:fee6b8c7cfdf1f77c115d7"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+
+  // Realtime Database reference
+  const db = firebase.database();
+</script>
+    <script>
     let balance = 0;
     let joined = false;
     let mCount = 0;
@@ -290,12 +309,28 @@
 
     function showAddMoney() { document.getElementById('add-money-list').classList.remove('hidden'); }
 
-    function payVia(method) {
-        openModal(`${method} Payment`, `${method} 01989118735 এই নাম্বারে টাকা পাঠিয়ে Transaction ID নিচে দিন:`, "Transaction ID লিখুন", (tid) => {
-                alert("ধন্যবাদ! ভেরিফিকেশনের পর ব্যালেন্স যোগ হবে।");
-            }
-        );
-    }
+    const userId = "user_001"; // ডেমো ইউজার
+
+function payVia(method) {
+    openModal(
+        `${method} Payment`,
+        `${method} 01989118735 এই নাম্বারে টাকা পাঠিয়ে Transaction ID দিন`,
+        "Transaction ID লিখুন",
+        (tid) => {
+
+            db.ref("depositRequests").push({
+                userId: userId,
+                method: method,
+                transactionId: tid,
+                amount: 100,
+                status: "pending",
+                time: Date.now()
+            });
+
+            alert("✅ Add Money Request Admin এর কাছে চলে গেছে");
+        }
+    );
+}
 
     function handleWithdraw() {
         if(balance < 50) {
