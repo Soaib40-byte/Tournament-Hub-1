@@ -1,196 +1,372 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Admin Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Admin - Pro Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #2563eb; --secondary: #0f172a; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; }
+        header { background: var(--secondary); color: white; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; position: sticky; top: 0; z-index: 100; }
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .card h3 { margin: 0 0 10px 0; font-size: 16px; color: var(--secondary); border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.3s; margin: 5px 0; }
+        .btn-add { background: var(--primary); }
+        .btn-approve { background: var(--success); }
+        .btn-reject { background: var(--danger); }
+        .btn-delete { background: #64748b; font-size: 12px; }
+        
+        .filter-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .filter-btn { flex: 1; padding: 8px; border: none; border-radius: 5px; background: #e2e8f0; color: #475569; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .filter-btn.active { background: var(--primary); color: white; }
 
-  <!-- Firebase COMPAT SDKs (ONLY) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+        .flex-btns { display: flex; gap: 8px; }
+        .status { font-size: 11px; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; font-weight: bold; }
+        .pending { background: #fef9c3; color: #854d0e; }
+        .approved { background: #dcfce7; color: #166534; }
+        .rejected { background: #fee2e2; color: #991b1b; }
 
-  <style>
-    *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
-    body{margin:0;background:#f3f4f6}
-    header{background:#0f172a;color:#fff;padding:15px;font-size:18px;font-weight:bold}
-    .tabs{display:flex;gap:8px;padding:10px;background:#e5e7eb}
-    .tab{flex:1;text-align:center;padding:10px;border-radius:6px;font-weight:bold;cursor:pointer;background:#cbd5f5}
-    .tab.active{background:#2563eb;color:#fff}
-    .container{padding:15px}
-    .section{display:none}
-    .section.active{display:block}
-    .box{background:#fff;border-radius:10px;padding:15px;margin-bottom:15px;box-shadow:0 4px 10px rgba(0,0,0,.08)}
-    h2{margin:0 0 10px;font-size:16px}
-    input,select{width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #d1d5db}
-    button{padding:8px;border:none;border-radius:6px;font-weight:bold;cursor:pointer}
-    .approve{background:#16a34a;color:#fff}
-    .reject{background:#dc2626;color:#fff}
-    .add{background:#2563eb;color:#fff;width:100%}
-    .card{border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px}
-    .row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px}
-    .status{font-size:12px;padding:3px 8px;border-radius:12px}
-    .pending{background:#fde68a}
-    .approved{background:#bbf7d0}
-    .rejected{background:#fecaca}
-    .upcoming{background:#fde68a}
-    .live{background:#bbf7d0}
-    .closed{background:#fecaca}
-    .actions{display:flex;gap:6px;margin-top:6px}
-  </style>
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; height: 65px; z-index: 1000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; font-size: 10px; cursor: pointer; }
+        .nav-item i { font-size: 18px; margin-bottom: 4px; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
+        
+        /* New Styles for Player List */
+        .player-row { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .winner-input-group { display: flex; gap: 5px; margin-top: 5px; }
+        .winner-input-group input { padding: 5px; margin: 0; }
+    </style>
 </head>
-
 <body>
-<header>Admin Dashboard</header>
 
-<div class="tabs">
-  <div class="tab active" onclick="showTab('withdraw')">Withdraw</div>
-  <div class="tab" onclick="showTab('deposit')">Deposit</div>
-  <div class="tab" onclick="showTab('matches')">Matches</div>
-</div>
+<header>Admin Control Panel</header>
 
 <div class="container">
-  <div id="withdraw" class="section active">
-    <div class="box">
-      <h2>Withdraw Requests</h2>
-      <div id="withdrawList"></div>
-    </div>
-  </div>
-
-  <div id="deposit" class="section">
-    <div class="box">
-      <h2>Deposit Requests</h2>
-      <div id="depositList"></div>
-    </div>
-  </div>
-
-  <div id="matches" class="section">
-    <div class="box">
-      <h2>Add Match</h2>
-      <input id="mTitle" placeholder="Match Title" />
-      <select id="mGame"><option>Free Fire</option><option>Blood Strike</option></select>
-      <select id="mType"><option>Solo</option><option>Duo</option><option>Squad</option></select>
-      <input id="mEntry" type="number" placeholder="Entry Fee" />
-      <input id="mPrize" type="number" placeholder="Prize" />
-      <input id="mTime" placeholder="Date & Time" />
-      <button class="add" onclick="addMatch()">Add Match</button>
+    <div id="match-sec" class="section active">
+        <div class="card">
+            <h3>Create Match</h3>
+            <input id="mTitle" placeholder="Match Title">
+            <select id="mMode">
+                <option value="Solo">Solo</option>
+                <option value="Duo">Duo</option>
+                <option value="Squad">Squad</option>
+            </select>
+            <input id="mEntry" type="number" placeholder="Entry Fee">
+            <input id="mPrize" type="number" placeholder="Total Prize">
+            <input id="mTime" placeholder="Time (30/01/26, 12:00AM)">
+            <button class="btn btn-add" onclick="addMatch()">Publish Match</button>
+        </div>
+        <div id="matchList"></div>
     </div>
 
-    <div class="box">
-      <h2>All Matches</h2>
-      <div id="matchList"></div>
+    <div id="win-sec" class="section">
+        <div class="filter-tabs">
+            <button class="filter-btn active" onclick="switchWinTab('player-list', this)">Player List</button>
+            <button class="filter-btn" onclick="switchWinTab('winner-list', this)">Winner List</button>
+        </div>
+
+        <div id="player-list-area">
+            <div class="card">
+                <h3>Select Match to See Players</h3>
+                <select id="matchSelect" onchange="loadPlayersForMatch(this.value)">
+                    <option value="">Select Match</option>
+                </select>
+            </div>
+            <div id="joinedPlayers"></div>
+        </div>
+
+        <div id="winner-list-area" style="display:none">
+            <h2 style="font-size: 18px;">Winners History</h2>
+            <div id="winnerList"></div>
+        </div>
     </div>
-  </div>
+
+    <div id="dep-sec" class="section">
+        <h2 style="font-size: 18px;">Deposit Requests</h2>
+        <div class="filter-tabs">
+            <button class="filter-btn active" onclick="filterDep('pending', this)">Pending</button>
+            <button class="filter-btn" onclick="filterDep('approved', this)">Approved</button>
+            <button class="filter-btn" onclick="filterDep('rejected', this)">Rejected</button>
+        </div>
+        <div id="depositList"></div>
+    </div>
+
+    <div id="with-sec" class="section">
+        <h2 style="font-size: 18px;">Withdraw Requests</h2>
+        <div class="filter-tabs">
+            <button class="filter-btn active" onclick="filterWith('pending', this)">Pending</button>
+            <button class="filter-btn" onclick="filterWith('approved', this)">Approved</button>
+            <button class="filter-btn" onclick="filterWith('rejected', this)">Rejected</button>
+        </div>
+        <div id="withdrawList"></div>
+    </div>
 </div>
 
+<nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('match-sec', this)"><i class="fas fa-trophy"></i>Matches</div>
+    <div class="nav-item" onclick="switchTab('win-sec', this)"><i class="fas fa-crown"></i>Winners</div>
+    <div class="nav-item" onclick="switchTab('dep-sec', this)"><i class="fas fa-wallet"></i>Deposit</div>
+    <div class="nav-item" onclick="switchTab('with-sec', this)"><i class="fas fa-money-bill-wave"></i>Withdraw</div>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
-  /* ================= FIREBASE CONFIG (FIXED) ================= */
-  const firebaseConfig = {
-    apiKey: "AIzaSyDgBrES-3lWjeFVo6vz3jfMOyCl_tgy_RQ",
-    authDomain: "tournament-hub-a936a.firebaseapp.com",
-    databaseURL: "https://tournament-hub-a936a-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "tournament-hub-a936a",
-    storageBucket: "tournament-hub-a936a.firebasestorage.app",
-    messagingSenderId: "968072956918",
-    appId: "1:968072956918:web:fee6b8c7cfdf1f77c115d7"
-  };
+    // Firebase Configuration (Keeping your existing config)
+    const firebaseConfig = {
+        apiKey: "AIzaSyDgBrES-3lWjeFVo6vz3jfMOyCl_tgy_RQ",
+        authDomain: "tournament-hub-a936a.firebaseapp.com",
+        databaseURL: "https://tournament-hub-a936a-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "tournament-hub-a936a",
+        storageBucket: "tournament-hub-a936a.appspot.com",
+        messagingSenderId: "968072956918",
+        appId: "1:968072956918:web:fee6b8c7cfdf1f77c115d7"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-  /* =========================================================== */
+    function switchTab(id, el) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        el.classList.add('active');
+        if(id === 'win-sec') updateMatchDropdown();
+    }
 
-  function showTab(id){
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    document.querySelector(`[onclick="showTab('${id}')"]`).classList.add('active');
-  }
+    function switchWinTab(target, el) {
+        document.querySelectorAll('#win-sec .filter-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        if(target === 'player-list') {
+            document.getElementById('player-list-area').style.display = 'block';
+            document.getElementById('winner-list-area').style.display = 'none';
+        } else {
+            document.getElementById('player-list-area').style.display = 'none';
+            document.getElementById('winner-list-area').style.display = 'block';
+            loadWinners();
+        }
+    }
 
-  // Withdraw
-  db.ref('withdrawRequests').on('value', snap=>{
-    withdrawList.innerHTML='';
-    snap.forEach(c=>{
-      const d=c.val();
-      withdrawList.innerHTML+=`
-      <div class='card'>
-        <div class='row'><b>User:</b>${d.userId}</div>
-        <div class='row'><b>Amount:</b>৳${d.amount}</div>
-        <div class='row'><span class='status ${d.status}'>${d.status}</span></div>
-        <div class='actions'>
-          <button class='approve' onclick="approveWithdraw('${c.key}','${d.userId}',${d.amount})">Approve</button>
-          <button class='reject' onclick="rejectWithdraw('${c.key}')">Reject</button>
-        </div>
-      </div>`;
-    })
-  });
+    // --- Winner Management Logic ---
 
-  function approveWithdraw(id,uid,amt){
-    db.ref('withdrawRequests/'+id).update({status:'approved'});
-    db.ref('users/'+uid+'/balance').transaction(b=>(b||0)-amt);
-  }
-  function rejectWithdraw(id){
-    db.ref('withdrawRequests/'+id).update({status:'rejected'});
-  }
+    function updateMatchDropdown() {
+        const select = document.getElementById('matchSelect');
+        db.ref('matches').once('value', snap => {
+            select.innerHTML = '<option value="">Select Match</option>';
+            snap.forEach(child => {
+                select.innerHTML += `<option value="${child.key}">${child.val().title}</option>`;
+            });
+        });
+    }
 
-  // Deposit
-  db.ref('depositRequests').on('value', snap=>{
-    depositList.innerHTML='';
-    snap.forEach(c=>{
-      const d=c.val();
-      depositList.innerHTML+=`
-      <div class='card'>
-        <div class='row'><b>User:</b>${d.userId}</div>
-        <div class='row'><b>Amount:</b>৳${d.amount}</div>
-        <div class='row'><span class='status ${d.status}'>${d.status}</span></div>
-        <div class='actions'>
-          <button class='approve' onclick="approveDeposit('${c.key}','${d.userId}',${d.amount})">Approve</button>
-          <button class='reject' onclick="rejectDeposit('${c.key}')">Reject</button>
-        </div>
-      </div>`;
-    })
-  });
+    function loadPlayersForMatch(matchId) {
+        if(!matchId) return;
+        const listDiv = document.getElementById('joinedPlayers');
+        listDiv.innerHTML = '<p style="text-align:center">Loading players...</p>';
 
-  function approveDeposit(id,uid,amt){
-    db.ref('depositRequests/'+id).update({status:'approved'});
-    db.ref('users/'+uid+'/balance').transaction(b=>(b||0)+amt);
-  }
-  function rejectDeposit(id){
-    db.ref('depositRequests/'+id).update({status:'rejected'});
-  }
+        db.ref(`matchPlayers/${matchId}`).on('value', snap => {
+            listDiv.innerHTML = '';
+            if(!snap.exists()) {
+                listDiv.innerHTML = '<div class="card">No players joined yet.</div>';
+                return;
+            }
+            snap.forEach(child => {
+                const p = child.val();
+                listDiv.innerHTML += `
+                    <div class="card player-row">
+                        <div style="display:flex; justify-content:space-between">
+                            <b>${p.gameName}</b>
+                            <span style="font-size:12px; color:#666">ID: ${p.userId.slice(-5)}</span>
+                        </div>
+                        <div class="winner-input-group">
+                            <select id="rank-${child.key}" style="width:70px">
+                                <option value="1">1st</option>
+                                <option value="2">2nd</option>
+                                <option value="3">3rd</option>
+                            </select>
+                            <input type="number" id="prize-${child.key}" placeholder="Prize (৳)" style="flex:1">
+                            <button class="btn btn-approve" style="width:80px; margin:0" 
+                                onclick="setWinner('${matchId}', '${child.key}', '${p.userId}', '${p.gameName}')">Set</button>
+                        </div>
+                    </div>`;
+            });
+        });
+    }
 
-  // Matches
-  function addMatch(){
-    db.ref('matches').push({
-      title:mTitle.value,
-      game:mGame.value,
-      type:mType.value,
-      entryFee:mEntry.value,
-      prize:mPrize.value,
-      time:mTime.value,
-      status:'upcoming'
+    function setWinner(matchId, playerKey, userId, gameName) {
+        const rank = document.getElementById(`rank-${playerKey}`).value;
+        const amount = document.getElementById(`prize-${playerKey}`).value;
+
+        if(!amount) return alert("Please enter prize amount");
+
+        const winData = {
+            matchId: matchId,
+            userId: userId,
+            gameName: gameName,
+            rank: rank,
+            prize: Number(amount),
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        // 1. Add to winner history
+        db.ref('winners').push(winData).then(() => {
+            // 2. Add balance to user
+            db.ref(`users/${userId}/balance`).transaction(curr => (curr || 0) + Number(amount));
+            // 3. Optional: Remove from player list or mark as winner
+            alert(`Rank ${rank} Winner Updated! ৳${amount} added to user.`);
+        });
+    }
+
+    function loadWinners() {
+        db.ref('winners').on('value', snap => {
+            const list = document.getElementById('winnerList');
+            list.innerHTML = '';
+            let items = [];
+            snap.forEach(c => items.push(c.val()));
+            items.reverse().forEach(w => {
+                list.innerHTML += `
+                    <div class="card" style="border-left: 4px solid var(--success)">
+                        <b>${w.gameName}</b> - <span class="status approved">${w.rank} Rank</span>
+                        <p style="margin:5px 0 0 0">Won: ৳${w.prize} | UserID: ${w.userId.slice(-6)}</p>
+                    </div>`;
+            });
+        });
+    }
+
+    // --- Existing Functionalities (Deposit, Withdraw, Matches) ---
+
+    let currentDepFilter = 'pending';
+    let currentWithFilter = 'pending';
+
+    function filterDep(status, el) {
+        currentDepFilter = status;
+        document.querySelectorAll('#dep-sec .filter-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        loadDeposits();
+    }
+
+    function loadDeposits() {
+        db.ref('depositRequests').on('value', snap => {
+            const list = document.getElementById('depositList');
+            list.innerHTML = '';
+            let items = [];
+            snap.forEach(child => {
+                const d = child.val();
+                if(d.status === currentDepFilter) items.push({key: child.key, ...d});
+            });
+            items.reverse().forEach(d => {
+                list.innerHTML += `
+                    <div class="card">
+                        <b>User: ${d.userId.slice(-6)}</b> | ৳${d.amount} <span class="status ${d.status}">${d.status}</span><br>
+                        TID: ${d.transactionId}
+                        ${d.status === 'pending' ? `
+                        <div class="flex-btns" style="margin-top:10px">
+                            <button class="btn btn-approve" onclick="approveDep('${d.key}','${d.userId}',${d.amount})">Approve</button>
+                            <button class="btn btn-reject" onclick="updateStatus('depositRequests', '${d.key}', 'rejected')">Reject</button>
+                        </div>` : ''}
+                    </div>`;
+            });
+        });
+    }
+
+    function filterWith(status, el) {
+        currentWithFilter = status;
+        document.querySelectorAll('#with-sec .filter-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        loadWithdrawals();
+    }
+
+    function loadWithdrawals() {
+        db.ref('withdrawRequests').on('value', snap => {
+            const list = document.getElementById('withdrawList');
+            list.innerHTML = '';
+            let items = [];
+            snap.forEach(child => {
+                const w = child.val();
+                if(w.status === currentWithFilter) items.push({key: child.key, ...w});
+            });
+            items.reverse().forEach(w => {
+                list.innerHTML += `
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between">
+                            <b>User: ${w.userId.slice(-6)}</b>
+                            <span class="status ${w.status}">${w.status}</span>
+                        </div>
+                        <p>Amount: ৳${w.amount}</p>
+                        ${w.status === 'pending' ? `
+                        <div class="flex-btns">
+                            <button class="btn btn-approve" onclick="updateStatus('withdrawRequests', '${w.key}', 'approved')">Approve</button>
+                            <button class="btn btn-reject" onclick="rejectWith('${w.key}','${w.userId}',${w.amount})">Reject & Refund</button>
+                        </div>` : ''}
+                    </div>`;
+            });
+        });
+    }
+
+    function updateStatus(path, id, status) { db.ref(`${path}/${id}`).update({ status: status }); }
+    function approveDep(id, uid, amt) {
+        db.ref('depositRequests/'+id).update({status:'approved'});
+        db.ref('users/'+uid+'/balance').transaction(b => (b||0) + Number(amt));
+    }
+    function rejectWith(id, uid, amt) {
+        db.ref('withdrawRequests/'+id).update({status:'rejected'});
+        db.ref('users/'+uid+'/balance').transaction(b => (b||0) + Number(amt));
+    }
+
+    function addMatch() {
+        const title = document.getElementById('mTitle').value;
+        if(!title) return alert("Title please");
+        db.ref('matches').push({
+            title: title, 
+            type: document.getElementById('mMode').value,
+            entryFee: document.getElementById('mEntry').value,
+            prize: document.getElementById('mPrize').value,
+            time: document.getElementById('mTime').value,
+            game: "Free Fire",
+            roomId: "Waiting...", 
+            roomPass: "Waiting...", 
+            status: 'upcoming',
+            createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        alert("Match Published!");
+    }
+
+    db.ref('matches').on('value', snap => {
+        const list = document.getElementById('matchList');
+        list.innerHTML = '';
+        let items = [];
+        snap.forEach(child => { items.push({key: child.key, ...child.val()}); });
+        items.reverse().forEach(m => {
+            list.innerHTML += `
+                <div class="card">
+                    <h3>${m.title} (${m.type})</h3>
+                    <div class="flex-btns">
+                        <input id="ri-${m.key}" value="${m.roomId}" placeholder="Room ID">
+                        <input id="rp-${m.key}" value="${m.roomPass}" placeholder="Pass">
+                    </div>
+                    <button class="btn btn-add" onclick="updateRoom('${m.key}')">Update Room</button>
+                    <button class="btn btn-delete" onclick="deleteMatch('${m.key}')">Delete Match</button>
+                </div>`;
+        });
     });
-    mTitle.value=mEntry.value=mPrize.value=mTime.value='';
-  }
 
-  db.ref('matches').on('value', snap=>{
-    matchList.innerHTML='';
-    snap.forEach(c=>{
-      const m=c.val();
-      matchList.innerHTML+=`
-      <div class='card'>
-        <div class='row'><b>${m.title}</b>
-          <span class='status ${m.status}'>${m.status}</span>
-        </div>
-        <div class='row'>${m.game} • ${m.type}</div>
-        <div class='row'>Entry ৳${m.entryFee} | Prize ৳${m.prize}</div>
-        <div class='row'>${m.time}</div>
-        <div class='actions'>
-          <button class='approve' onclick="db.ref('matches/${c.key}').update({status:'live'})">Live</button>
-          <button class='reject' onclick="db.ref('matches/${c.key}').update({status:'closed'})">Close</button>
-        </div>
-      </div>`;
-    })
-  });
+    function deleteMatch(id) { if(confirm("Delete?")) db.ref('matches/'+id).remove(); }
+    function updateRoom(id) {
+        db.ref('matches/'+id).update({
+            roomId: document.getElementById('ri-'+id).value,
+            roomPass: document.getElementById('rp-'+id).value
+        });
+    }
+
+    // Initial Load
+    loadDeposits();
+    loadWithdrawals();
 </script>
-  
 </body>
 </html>
