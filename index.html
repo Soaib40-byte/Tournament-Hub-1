@@ -224,25 +224,46 @@
     }
 
     function startLiveTimer(target, elementId, btnId) {
-        const x = setInterval(() => {
-            const distance = Number(target) - new Date().getTime();
-            const display = document.getElementById(elementId);
-            const btn = document.getElementById(btnId);
-            if (!display) { clearInterval(x); return; }
-            if (distance < 0) {
-                clearInterval(x);
-                display.innerHTML = "🔴 MATCH STARTED";
-                if (btn && !btn.innerText.includes("JOINED") && btn.innerText !== "MATCH FULL") {
-                    btn.innerText = "ENTRY CLOSED"; btn.disabled = true; btn.classList.add('btn-joined');
-                }
-            } else {
-                const h = Math.floor((distance % 86400000) / 3600000);
-                const m = Math.floor((distance % 3600000) / 60000);
-                const s = Math.floor((distance % 60000) / 1000);
-                display.innerHTML = `<i class="far fa-clock"></i> Starts in: ${h}h ${m}m ${s}s`;
+    const targetTime = Number(target); // নিশ্চিত হওয়া যে এটি নাম্বার
+    
+    // আগের কোনো টাইমার চললে তা ক্লিয়ার করার চেষ্টা (পারফরম্যান্সের জন্য)
+    if (window['timer_' + elementId]) clearInterval(window['timer_' + elementId]);
+
+    window['timer_' + elementId] = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = targetTime - now;
+        const display = document.getElementById(elementId);
+        const btn = document.getElementById(btnId);
+
+        if (!display) { 
+            clearInterval(window['timer_' + elementId]); 
+            return; 
+        }
+
+        if (distance < 0) {
+            clearInterval(window['timer_' + elementId]);
+            display.innerHTML = "🔴 MATCH STARTED";
+            if (btn && !btn.innerText.includes("JOINED") && btn.innerText !== "MATCH FULL") {
+                btn.innerText = "ENTRY CLOSED"; 
+                btn.disabled = true; 
+                btn.classList.add('btn-joined');
             }
-        }, 1000);
-    }
+        } else {
+            // দিন, ঘন্টা, মিনিট এবং সেকেন্ড ক্যালকুলেশন
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // ফরম্যাটিং: যদি দিন থাকে তবেই দিন দেখাবে
+            let timeString = days > 0 ? `${days}d ` : "";
+            timeString += `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+            
+            display.innerHTML = `<i class="far fa-clock"></i> Starts in: ${timeString}`;
+        }
+    }, 1000);
+}
+
 
     function showFFSection(game) {
         hideAll(); document.getElementById('ff-sec').classList.remove('hidden');
